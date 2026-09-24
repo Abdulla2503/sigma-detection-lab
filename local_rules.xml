@@ -1,0 +1,34 @@
+<!--
+  Wazuh translation of rules/sigma/encoded_powershell.yml
+
+  Hand-written because no pySigma backend for Wazuh exists.
+  Deployed to /var/ossec/etc/rules/local_rules.xml
+
+  Design notes:
+
+  - <if_sid>61603</if_sid> chains to the base Sysmon Event ID 1 rule (level 0).
+    Wazuh fires one rule per event, so a custom rule must be a child of a rule
+    that matches, or it is never evaluated. Chaining to a specific detection
+    such as 92027 would restrict this to PowerShell-spawned-PowerShell only.
+
+  - type="pcre2" is required. Wazuh <field> uses OS_Regex by default, which
+    does not understand (?i) or alternation groups.
+
+  - Matching on originalFileName rather than image avoids two problems:
+    backslash escaping through the decoder, and SysWOW64/System32 path
+    redirection on WOW64 systems.
+-->
+
+<group name="sigma,windows,sysmon,">
+
+  <rule id="100101" level="12">
+    <if_sid>61603</if_sid>
+    <field name="win.eventdata.originalFileName" type="pcre2">(?i)^powershell\.exe$|^pwsh\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)\s-(enc|encodedcommand|ec)\s</field>
+    <description>Sigma T1059.001: Encoded PowerShell command executed on $(win.system.computer)</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+  </rule>
+
+</group>
